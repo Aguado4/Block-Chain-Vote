@@ -12,8 +12,3 @@ This repository contains a blockchain-based voting application that leverages sm
 1. Clone the repository and install the necessary dependencies for the frontend.
 2. Deploy the smart contract on a blockchain network.
 3. Connect the frontend to the deployed contract using the appropriate contract address and ABI.
-
-
-### License:
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
