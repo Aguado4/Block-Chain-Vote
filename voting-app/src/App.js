@@ -5,7 +5,7 @@ import yesImage from './yesImage.png'; // Importa la imagen para el "Sí"
 import noImage from './noImage.png'; // Importa la imagen para el "No"
 
 // Dirección del contrato desplegado en la red de pruebas
-const contractAddress = '0xd9145CCE52D386f254917e481eB44e9943F39138'; // Reemplaza con la dirección de tu contrato
+const contractAddress = '0x506fDf2B114dC344a75565D47EAC92c8E4117C4d'; // Reemplaza con la dirección de tu contrato
 
 // ABI del contrato que define las funciones que se pueden llamar
 const contractABI = [
