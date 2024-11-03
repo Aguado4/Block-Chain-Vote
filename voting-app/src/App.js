@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserProvider, Contract, ethers } from "ethers";
 import fondo from './chain.jpg';
-import yesImage from './yesImage.png'; // Importa la imagen para el "Sí"
-import noImage from './noImage.png'; // Importa la imagen para el "No"
+import yesImage from './yesImage.png';
+import noImage from './noImage.png';
 
-// Dirección del contrato desplegado en la red de pruebas
-const contractAddress = '0x506fDf2B114dC344a75565D47EAC92c8E4117C4d'; // Reemplaza con la dirección de tu contrato
-
-// ABI del contrato que define las funciones que se pueden llamar
+const contractAddress = '0xFc894967E9c09c6DBDBc002F7d6Fb9F657710cAF';
 const contractABI = [
     "function vote(bool _vote, bytes32 _signatureHash) external",
     "function yesVotes() view returns (uint256)",
@@ -15,47 +12,40 @@ const contractABI = [
 ];
 
 function VotingApp() {
-    // Estados para manejar la conexión con el proveedor, el firmante, el contrato y los votos
     const [provider, setProvider] = useState(null);
     const [signer, setSigner] = useState(null);
     const [contract, setContract] = useState(null);
     const [yesCount, setYesCount] = useState(0);
     const [noCount, setNoCount] = useState(0);
-    const [hoveredButton, setHoveredButton] = useState(null); // Estado para gestionar el botón hover
+    const [hoveredButton, setHoveredButton] = useState(null);
 
     useEffect(() => {
         async function init() {
-            // Inicializa el proveedor de Ethereum si está disponible
             if (window.ethereum) {
-                const provider = new BrowserProvider(window.ethereum);
-                setProvider(provider);
-
-                // Verificar si las cuentas ya están conectadas
-                const accounts = await provider.send("eth_accounts", []);
-                if (accounts.length === 0) {
-                    // Solicitar las cuentas solo si no están conectadas
-                    try {
-                        await provider.send("eth_requestAccounts", []);
-                    } catch (error) {
-                        console.error("Error al solicitar cuentas:", error);
-                    }
-                }
-
-                // Obtiene el firmante (la cuenta activa) y el contrato
-                const signer = await provider.getSigner();
-                setSigner(signer);
-
-                const contract = new Contract(contractAddress, contractABI, signer);
-                setContract(contract);
-
-                // Obtiene el número de votos "Sí" y "No" del contrato
                 try {
-                    const yesVotes = await contract.yesVotes();
-                    const noVotes = await contract.noVotes();
-                    setYesCount(yesVotes.toNumber());
-                    setNoCount(noVotes.toNumber());
+                    const providerInstance = new BrowserProvider(window.ethereum);
+                    setProvider(providerInstance);
+
+                    const accounts = await providerInstance.send("eth_accounts", []);
+                    if (accounts.length === 0) {
+                        await providerInstance.send("eth_requestAccounts", []);
+                    }
+
+                    const signerInstance = await providerInstance.getSigner();
+                    setSigner(signerInstance);
+
+                    const contractInstance = new Contract(contractAddress, contractABI, signerInstance);
+                    setContract(contractInstance);
+
+                    // Obtiene el número de votos "Sí" y "No"
+                    const yesVotes = await contractInstance.yesVotes();
+                    const noVotes = await contractInstance.noVotes();
+
+                    // Usar toString() para asegurar la conversión correcta
+                    setYesCount(parseInt(yesVotes.toString(), 10));
+                    setNoCount(parseInt(noVotes.toString(), 10));
                 } catch (error) {
-                    console.error("Error al obtener los votos:", error);
+                    console.error("Error durante la inicialización:", error);
                 }
             } else {
                 console.error("Core Wallet no está disponible. Asegúrate de que esté instalado.");
@@ -65,20 +55,24 @@ function VotingApp() {
     }, []);
 
     const handleVote = async (userVote) => {
-        // Maneja la lógica de votación
+        if (!signer || !contract) {
+            console.error("El contrato o el firmante no están inicializados.");
+            return;
+        }
+
         try {
             const message = JSON.stringify({ vote: userVote ? "yes" : "no" });
-            const signature = await signer.signMessage(message); // Firma el mensaje para verificar la identidad
-            const signatureHash = ethers.keccak256(signature); // Crea un hash de la firma
+            const signature = await signer.signMessage(message);
+            const signatureHash = ethers.keccak256(signature);
 
-            const tx = await contract.vote(userVote, signatureHash); // Envía la transacción al contrato
-            await tx.wait(); // Espera a que la transacción se confirme
+            const tx = await contract.vote(userVote, signatureHash);
+            await tx.wait();
 
             // Actualiza los conteos de votos después de votar
             const yesVotes = await contract.yesVotes();
             const noVotes = await contract.noVotes();
-            setYesCount(yesVotes.toNumber());
-            setNoCount(noVotes.toNumber());
+            setYesCount(parseInt(yesVotes.toString(), 10));
+            setNoCount(parseInt(noVotes.toString(), 10));
         } catch (error) {
             console.error("Error al votar:", error);
         }
@@ -95,8 +89,8 @@ function VotingApp() {
             color: '#000',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-start', // Cambiado a 'flex-start' para subir el contenido
-            paddingTop: '40px' // Añadido padding superior para elevar todo el contenido
+            justifyContent: 'flex-start',
+            paddingTop: '40px'
         }}>
             <h1 style={{ color: '#B0E0E6' }}>Sistema de Votación Blockchain</h1>
             <h2 style={{ color: '#87CEEB' }}>¿Nos deberían poner 5.0 en la definitiva?</h2>
@@ -112,7 +106,7 @@ function VotingApp() {
                         padding: '15px 30px',
                         fontSize: '20px',
                         color: '#008000',
-                        backgroundColor: hoveredButton === 'yes' ? '#98FB98' : '#f0f0f0', // Cambiar color de fondo al hacer hover
+                        backgroundColor: hoveredButton === 'yes' ? '#98FB98' : '#f0f0f0',
                         border: '2px solid #008000',
                         borderRadius: '5px',
                         cursor: 'pointer'
@@ -127,7 +121,7 @@ function VotingApp() {
                         padding: '15px 30px',
                         fontSize: '20px',
                         color: '#FF0000',
-                        backgroundColor: hoveredButton === 'no' ? '#FFB6C1' : '#f0f0f0', // Cambiar color de fondo al hacer hover
+                        backgroundColor: hoveredButton === 'no' ? '#FFB6C1' : '#f0f0f0',
                         border: '2px solid #FF0000',
                         borderRadius: '5px',
                         cursor: 'pointer'
@@ -137,9 +131,9 @@ function VotingApp() {
                 {hoveredButton === 'yes' && (
                     <img src={yesImage} alt="Voto Sí" style={{
                         position: 'absolute',
-                        top: '100px', // Ajusta la posición de la imagen
-                        left: 'calc(50% - 150px)', // Ajusta la posición para centrar a la izquierda
-                        width: '150px', // Ajusta el tamaño de la imagen
+                        top: '100px',
+                        left: 'calc(50% - 150px)',
+                        width: '150px',
                         height: 'auto',
                         opacity: 0,
                         animation: 'fadeIn 0.5s forwards'
@@ -148,9 +142,9 @@ function VotingApp() {
                 {hoveredButton === 'no' && (
                     <img src={noImage} alt="Voto No" style={{
                         position: 'absolute',
-                        top: '100px', // Ajusta la posición de la imagen
-                        left: 'calc(50% + 20px)', // Ajusta la posición para centrar a la derecha
-                        width: '150px', // Ajusta el tamaño de la imagen
+                        top: '100px',
+                        left: 'calc(50% + 20px)',
+                        width: '150px',
                         height: 'auto',
                         opacity: 0,
                         animation: 'fadeIn 0.5s forwards'
@@ -158,7 +152,7 @@ function VotingApp() {
                 )}
             </div>
             <footer style={{
-                marginTop: '370px', // Aumentado margen superior para el footer
+                marginTop: '370px',
                 fontWeight: 'bold',
                 color: '#00BFFF',
                 position: 'relative',
@@ -166,7 +160,7 @@ function VotingApp() {
                 left: '50%',
                 transform: 'translateX(-50%)'
             }}>
-                Desarrollado por Juan José Aguado
+                Desarrollado por Juan José Aguado y Santiago Peña
             </footer>
             <style>{`
                 @keyframes fadeIn {
