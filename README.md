@@ -13,9 +13,6 @@ This repository contains a blockchain-based voting application that leverages sm
 2. Deploy the smart contract on a blockchain network.
 3. Connect the frontend to the deployed contract using the appropriate contract address and ABI.
 
-### Contributing:
-
-Contributions to enhance the application are welcome! Feel free to open issues or submit pull requests for new features or bug fixes.
 
 ### License:
 
